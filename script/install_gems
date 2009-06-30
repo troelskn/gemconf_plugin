@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+require 'getoptlong'
+
+class GemConf
+  attr_reader :commands
+  def initialize
+    @commands = []
+  end
+  def gem(name, options = {})
+    arguments = "#{name}"
+    arguments << " --version '#{options[:version]}'" if options[:version]
+    arguments << " --source '#{options[:source]}'" if options[:source]
+    @commands << "gem list --installed #{arguments} > /dev/null || gem install #{arguments}"
+  end
+end
+
+def main
+  gemconf_filename = File.join(File.dirname(__FILE__), '..', 'config', 'gemconf.rb')
+  raise "File `config/gemconf.rb` doesn't exist." unless File.exists? gemconf_filename
+  config = GemConf.new
+  eval File.read(gemconf_filename)
+  config.commands.each do |command|
+    puts ">>> #{command}"
+    system(command)
+  end
+end
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--local-install', GetoptLong::NO_ARGUMENT ]
+)
+show_help = false
+local_install = false
+opts.each do |opt, args|
+  case opt
+  when '--help'
+    show_help = true
+  when '--local-install'
+    local_install = true
+  end
+end
+
+if show_help
+  puts "Usage: #{$0} [OPTIONS]"
+  puts "Installs gems as specified in `config/gemconf.rb`"
+  puts ""
+  puts "OPTIONS:"
+  puts "  --local-install    Normally, you should install gems as root account, and therefore the script will halt if you're not root."
+  puts "                     If you prefer to install under a regular user, you have to pass this argument."
+  puts "  --help             Show this message."
+  exit 0
+end
+
+unless local_install
+  if `whoami`.strip != 'root'
+    puts "Must be run as root."
+    exit -1
+  end
+end
+
+main
