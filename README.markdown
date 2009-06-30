@@ -1,3 +1,6 @@
+gemconf plugin
+===
+
 This small plugin to Rails solves the problem that `rake gems:install` depends on Rake, which loads all tasks in the current subtree. Since a task can have load-time dependencies on gems, this might prevent Rake from starting up, thus making it inpossible to run the task, that should install the missing gems. A classical catch-22.
 
 The plugin moves gem dependencies into `config/gemconf.rb` and adds the script `script/install_gems` to your Rails project.
